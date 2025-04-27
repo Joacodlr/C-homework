@@ -173,7 +173,7 @@ void readBooks()
         if (match)
         {
             char yesorno;
-            printf("\n\n\n\n\n\n\ndo you want to see the overview version again? press y to continue, any other key to skip: ");
+            printf("\n\n\n\n\n\ndo you want to see the overview version again? press y to continue, any other key to skip: ");
             scanf(" %c", &yesorno);
             if (yesorno == 'y' || yesorno == 'Y')
             {
