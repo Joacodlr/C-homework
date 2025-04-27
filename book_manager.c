@@ -310,3 +310,7 @@ int main()
     }
     return 0;
 }
+
+//to run the code input in the terminal:
+// gcc book_manager.c -o book_manager
+// ./book_manager
