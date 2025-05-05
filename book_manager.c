@@ -197,22 +197,129 @@ void readBooks()
     fclose(file);
 }
 
-// Function to save a new book to CSV
+//  save or edit a book to CSV
 void savingmode()
 {
     struct Book b;
     char buffer[100];
-    char choice;
+    FILE *file;
 
-    FILE *file = fopen(CSV_FILE, "a");
-    if (!file)
+    int Choice;
+    printf("\n--- Choose Mode ---\n");
+    printf("1. Add New Book\n");
+    printf("2. Edit Existing Entry\n");
+    printf("Enter choice: ");
+    scanf("%d", &Choice);
+    getchar(); // clear newline
+
+    if (Choice == 2)
     {
-        perror("Could not open file for appending");
+        int targetID;
+        printf("Enter the Book ID: ");
+        scanf("%d", &targetID);
+        getchar();
+
+        FILE *readFile = fopen(CSV_FILE, "r");
+        FILE *tempFile = fopen("temp.csv", "w");
+        if (!readFile || !tempFile)
+        {
+            perror("Error opening files");
+            return;
+        }
+
+        char line[MAX_LINE];
+        int found = 0;
+
+        while (fgets(line, sizeof(line), readFile))
+        {
+            struct Book temp;
+            char lineCopy[MAX_LINE];
+            strcpy(lineCopy, line);
+
+            char *token = strtok(line, ",");
+
+            if (!token || !isValidInt(token))
+            {
+                fputs(lineCopy, tempFile); // header or invalid line
+                continue;
+            }
+
+            int currentID = atoi(token);
+
+            if (currentID == targetID && !found)
+            {
+                found = 1;
+                printf("\n--- Editing Book ID %d ---\n", targetID);
+                // edit ISBN
+                printf("Enter New ISBN: ");
+                fgets(b.isbn, sizeof(b.isbn), stdin);
+                b.isbn[strcspn(b.isbn, "\n")] = '\0';
+                // edit Authot
+                printf("Enter New Author(s): ");
+                fgets(b.authors, sizeof(b.authors), stdin);
+                b.authors[strcspn(b.authors, "\n")] = '\0';
+                // eDit year
+                printf("Enter New Publication Year: ");
+                fgets(buffer, sizeof(buffer), stdin);
+                while (!isValidInt(buffer))
+                {
+                    printf("Invalid. try again: ");
+                    fgets(buffer, sizeof(buffer), stdin);
+                }
+                b.original_publication_year = atoi(buffer);
+                // edit title
+                printf("Enter New Book Title: ");
+                fgets(b.original_title, sizeof(b.original_title), stdin);
+                b.original_title[strcspn(b.original_title, "\n")] = '\0';
+                // edit rating
+                printf("Enter New Average Rating: ");
+                fgets(buffer, sizeof(buffer), stdin);
+                while (isValidFloat(buffer) == -1)
+                {
+                    printf("Invalid. try again: ");
+                    fgets(buffer, sizeof(buffer), stdin);
+                }
+                b.average_rating = atof(buffer);
+
+                // updated book
+                fprintf(tempFile, "%d,0,0,0,0,%s,%s,%d,%s,eng,%.2f,0\n",
+                        targetID, b.isbn, b.authors,
+                        b.original_publication_year, b.original_title,
+                        b.average_rating);
+
+                printf("Book ID %d updated successfully!\n", targetID);
+            }
+            else
+            {
+                fputs(lineCopy, tempFile);
+            }
+        }
+
+        fclose(readFile);
+        fclose(tempFile);
+
+        if (found)
+        {
+            remove(CSV_FILE);
+            rename("temp.csv", CSV_FILE);
+        }
+        else
+        {
+            printf("Book ID %d not found.\n", targetID);
+            remove("temp.csv");
+        }
+
         return;
     }
 
-    do
+    if (Choice == 1)
     {
+        file = fopen(CSV_FILE, "a");
+        if (!file)
+        {
+            perror("Could not open file for appending");
+            return;
+        }
         printf("\n--- Add a New Book ---\n");
 
         // Book ID
@@ -267,15 +374,7 @@ void savingmode()
                 b.average_rating);
 
         printf("Book added successfully!\n");
-
-        // Ask if user wants to add another
-        printf("Would you like to add another book? (y/n): ");
-        choice = getchar();
-        while (getchar() != '\n')
-            ; // clear any extra input from buffer
-
-    } while (choice == 'y' || choice == 'Y');
-
+    }
     fclose(file);
 }
 
@@ -286,7 +385,7 @@ int main()
     while (1)
     {
         printf("\n--- Book CSV Manager ---\n");
-        printf("1. Add new book\n");
+        printf("1. Add or edit a book\n");
         printf("2. View all books\n");
         printf("3. Exit\n");
         printf("Enter your choice: ");
@@ -311,6 +410,6 @@ int main()
     return 0;
 }
 
-//to run the code input in the terminal:
-// gcc book_manager.c -o book_manager
-// ./book_manager
+// to run the code input in the terminal:
+//  gcc book_manager.c -o book_manager
+//  ./book_manager
